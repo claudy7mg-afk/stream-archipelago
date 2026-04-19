@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Remix: 3D Scroll-Based Website </title>
+  <style>
+    * { margin: 0; padding: 0; outline: none !important; box-sizing: border-box; }
+    canvas { display: block; outline: none !important; }
+  </style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --cream: #ffffffee;
+      --cream-dim: #ffffff88;
+      --dark: #2d3436;
+      --accent: #ff8fa3;
+      --accent2: #a5d8ff;
+      --accent3: #ffc87a;
+      --accent4: #c9a5ff;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-snap-type: y mandatory;
+    }
+
+    body {
+      background: #a8d8ea;
+      color: var(--dark);
+      font-family: 'Quicksand', sans-serif;
+      font-weight: 400;
+      overflow-x: hidden;
+    }
+
+    /* ── Splash ── */
+    .splash {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      position: relative;
+      scroll-snap-align: start;
+      pointer-events: none;
+    }
+
+    .splash .overline {
+      font-family: 'Quicksand', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.5em;
+      text-transform: uppercase;
+      color: var(--cream-dim);
+      margin-bottom: 1.5rem;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(8px);
+      padding: 0.5em 1.5em;
+      border-radius: 20px;
+    }
+
+    .splash h1 {
+      font-family: 'Nunito', sans-serif;
+      font-size: clamp(3.5rem, 10vw, 8rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 0.95;
+      margin-bottom: 1.5rem;
+      color: white;
+      text-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    .splash h1 span {
+      display: block;
+      font-weight: 300;
+      font-size: 0.45em;
+      letter-spacing: 0.15em;
+      color: var(--cream);
+    }
+
+    .splash .subtitle {
+      font-family: 'Quicksand', sans-serif;
+      font-size: clamp(0.85rem, 1.5vw, 1.1rem);
+      font-weight: 400;
+      letter-spacing: 0.2em;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .splash .scroll-hint {
+      margin-top: 3rem;
+      font-family: 'Quicksand', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: white;
+      background: #f08090;
+      padding: 0.6em 2em;
+      border-radius: 30px;
+      cursor: pointer;
+      pointer-events: auto;
+      border: none;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .splash .scroll-hint:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    /* ── Sections ── */
+    .sections {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    .section {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 6rem 0;
+      scroll-snap-align: start;
+      pointer-events: none;
+    }
+
+    .section .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5em;
+      font-family: 'Quicksand', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: white;
+      padding: 0.5em 1.2em;
+      border-radius: 20px;
+      margin-bottom: 2rem;
+    }
+
+    .section:nth-child(1) .badge { background: var(--accent); }
+    .section:nth-child(2) .badge { background: var(--accent2); color: var(--dark); }
+    .section:nth-child(3) .badge { background: var(--accent3); color: var(--dark); }
+    .section:nth-child(4) .badge { background: var(--accent4); }
+
+    .section .badge .icon {
+      font-size: 1.1em;
+    }
+
+    .section h2 {
+      font-family: 'Nunito', sans-serif;
+      font-size: clamp(1.8rem, 4.5vw, 3rem);
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      line-height: 1.2;
+      color: white;
+      text-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+
+    .section p {
+      font-size: clamp(0.9rem, 1.5vw, 1.05rem);
+      line-height: 1.9;
+      color: var(--cream-dim);
+      max-width: 440px;
+    }
+
+    .section .divider {
+      width: 30px;
+      height: 3px;
+      border-radius: 2px;
+      margin: 2rem auto;
+    }
+
+    .section:nth-child(1) .divider { background: var(--accent); }
+    .section:nth-child(2) .divider { background: var(--accent2); }
+    .section:nth-child(3) .divider { background: var(--accent3); }
+    .section:nth-child(4) .divider { background: var(--accent4); }
+
+    /* ── Finale ── */
+    .finale {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 4rem 2rem;
+      scroll-snap-align: start;
+      pointer-events: none;
+    }
+
+    .finale .overline {
+      font-family: 'Quicksand', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.5em;
+      text-transform: uppercase;
+      color: var(--cream-dim);
+      margin-bottom: 1.5rem;
+    }
+
+    .finale h2 {
+      font-family: 'Nunito', sans-serif;
+      font-size: clamp(2.5rem, 7vw, 5.5rem);
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      margin-bottom: 2rem;
+      color: white;
+      text-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    .finale p {
+      font-family: 'Quicksand', sans-serif;
+      font-size: 1rem;
+      line-height: 1.9;
+      color: var(--cream-dim);
+      max-width: 400px;
+    }
+
+    .finale .cta {
+      display: inline-block;
+      margin-top: 2.5rem;
+      padding: 0.9em 3em;
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: white;
+      background: var(--accent);
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 4px 15px rgba(255,143,163,0.35);
+    }
+
+    .finale .cta:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(255,143,163,0.45);
+    }
+
+    /* Re-enable pointer events on interactive elements */
+    .finale .cta {
+      pointer-events: auto;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .section { padding: 4rem 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Splash -->
+  <section class="splash">
+    <p class="overline">✦ Explore the miniature world ✦</p>
+    <h1>Archipelago<span>A Tiny World of Wonders</span></h1>
+    <p class="subtitle">Scroll to journey between islands</p>
+    <button class="scroll-hint" onclick="document.querySelector('.sections .section').scrollIntoView({ behavior: 'smooth' })">Discover</button>
+  </section>
+
+  <!-- Content sections -->
+  <div class="sections">
+
+    <div class="section">
+      <div class="badge"><span class="icon">🏠</span> Island One</div>
+      <h2>Welcome<br>to the Village</h2>
+      <div class="divider"></div>
+      <p>Pastel-colored cottages nestle between rounded hills. Warm light spills from tiny windows onto cobblestone paths where stories grow like wildflowers.</p>
+    </div>
+
+    <div class="section">
+      <div class="badge"><span class="icon">🌿</span> Island Two</div>
+      <h2>The Whispering<br>Garden</h2>
+      <div class="divider"></div>
+      <p>Trees with cotton-candy canopies sway gently in the breeze. Mushrooms glow softly, and abstract sculptures spin slowly like thoughts taking shape.</p>
+    </div>
+
+    <div class="section">
+      <div class="badge"><span class="icon">🏰</span> Island Three</div>
+      <h2>The Lookout<br>Tower</h2>
+      <div class="divider"></div>
+      <p>Rise above the clouds. From the tower's peak, every island is visible — a constellation of tiny worlds connected by winding bridges and shared dreams.</p>
+    </div>
+
+    <div class="section">
+      <div class="badge"><span class="icon">🌊</span> Island Four</div>
+      <h2>The Quiet<br>Pond</h2>
+      <div class="divider"></div>
+      <p>Lily pads drift on glass-still water. This is the place where the world slows down, where reflections are clearer than reality, and every ripple tells a story.</p>
+    </div>
+
+  </div>
+
+  <!-- Finale -->
+  <div class="finale">
+    <p class="overline">The Journey Continues</p>
+    <h2>Every island<br>is a new<br>beginning.</h2>
+    <p>A miniature world of six islands, connected by bridges and filled with whimsy. Each one holds something different — a village, a garden, a quiet moment.</p>
+    <a class="cta" href="javascript:void(0)" onclick="window.scrollTo({ top: 0, behavior: 'smooth' })">Start Again ↑</a>
+  </div>
+
+  <script type="module" src="/scene.js"></script>
+</body>
+</html>
