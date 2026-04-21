@@ -600,16 +600,103 @@ function createAbstractObjectLive(parent, x, y, z, type = 'torus') {
   }
 }
 
+function createBalloon(config = { body: 0xe74c3c }, position = [0, 5, 11]) {
+  const balloonGroup = new THREE.Group();
+  
+  // 1. Envelope (The big balloon)
+  const balloonMat = new THREE.MeshStandardMaterial({ 
+    color: config.body, 
+    flatShading: true, 
+    roughness: 0.7 
+  });
+  const envelope = new THREE.Mesh(sphereGeo, balloonMat);
+  // Reduced from [1.5, 2.0, 1.5] to [0.7, 0.9, 0.7]
+  envelope.scale.set(0.7, 0.9, 0.7); 
+  envelope.position.set(0, 0.8, 0); 
+  envelope.castShadow = true;
+  balloonGroup.add(envelope);
+
+  // 2. Accent Stripes (Torus)
+  for (let i = -1; i <= 1; i++) {
+    // Reduced radius from 1.4 to 0.65
+    const bandGeom = new THREE.TorusGeometry(0.65, 0.02, 6, 24);
+    const band = new THREE.Mesh(bandGeom, dolphinBellyMat);
+    band.position.set(0, 0.8 + i * 0.25, 0);
+    band.rotation.x = Math.PI / 2;
+    balloonGroup.add(band);
+  }
+
+  // 3. Ropes
+  const ropeMat = new THREE.MeshStandardMaterial({ color: 0x8B7355 });
+  const ropePositions = [[0.2, 0.2], [-0.2, 0.2], [0.2, -0.2], [-0.2, -0.2]];
+  for (const rp of ropePositions) {
+    const rope = new THREE.Mesh(cylGeo, ropeMat);
+    rope.scale.set(0.01, 0.6, 0.01);
+    rope.position.set(rp[0], 0.2, rp[1]);
+    balloonGroup.add(rope);
+  }
+
+  // 4. Basket
+  const basketMat = new THREE.MeshStandardMaterial({ color: 0x8B6914 });
+  const basket = new THREE.Mesh(boxGeo, basketMat);
+  // Reduced scale from 0.8 to 0.35
+  basket.scale.set(0.35, 0.25, 0.35);
+  basket.position.set(0, -0.15, 0);
+  basket.castShadow = true;
+  balloonGroup.add(basket);
+
+  // 5. Flame
+  const flameGeom = new THREE.ConeGeometry(0.08, 0.2, 6);
+  const flameMat = new THREE.MeshStandardMaterial({ 
+    color: 0xff6600, 
+    emissive: 0xff4400, 
+    emissiveIntensity: 1.0, 
+    transparent: true, 
+    opacity: 0.8 
+  });
+  const flame = new THREE.Mesh(flameGeom, flameMat);
+  flame.position.set(0, 0, 0);
+  balloonGroup.add(flame);
+
+  balloonGroup.position.set(...position);
+  scene.add(balloonGroup);
+
+  return { mesh: balloonGroup, flame };
+}
+
 function createHotAirBalloon(options = {}) {
   const {
     envelopeScale = [1.45, 1.8, 1.45],
     stripeScale = [0.35, 2.2, 3.0],
-    basketScale = [0.5, 0.35, 0.5],
+    basketScale = [0.8, 0.6, 0.8],
     position = [0, 5.6, 11],
     scale = 0.1625,
     envelopeMat = balloonEnvelopeMat,
     stripeMat = balloonStripeMat,
   } = options
+
+  const balloon = new THREE.Group()
+
+  // 1. Improved Envelope Shape (The "Upper Part")
+  // We use the shared sphereGeo but lift it so it sits above the center
+  const envelope = new THREE.Mesh(sphereGeo, envelopeMat)
+  envelope.scale.set(1.45, 1.9, 1.45) // Pixar-style vertical stretch
+  envelope.position.set(0, 0, 0)    // Lifted up
+  envelope.castShadow = true
+  envelope.receiveShadow = true
+  balloon.add(envelope)
+
+  // 2. Horizontal Accent Stripes (Replacing the box stripes)
+  // These use the Torus geometry for a much smoother, rounded look
+  for (let i = -1; i <= 1; i++) {
+    const bandGeom = new THREE.TorusGeometry(1.42, 0.06, 6, 24)
+    const band = new THREE.Mesh(bandGeom, stripeMat)
+    band.position.set(0, i * 0.7, 0)
+    band.rotation.x = Math.PI / 2
+    band.scale.set(1, 0.95, 1) // Slightly flatten the rings
+    balloon.add(band)
+  }
+  /*
   const balloon = new THREE.Group()
 
   const envelope = new THREE.Mesh(sphereGeo, envelopeMat)
@@ -626,6 +713,7 @@ function createHotAirBalloon(options = {}) {
   const stripe2 = stripe1.clone()
   stripe2.rotation.y = Math.PI / 2
   balloon.add(stripe2)
+  */
 
   const basket = new THREE.Mesh(boxGeo, balloonBasketMat)
   basket.position.set(0, -2.5, 0)
@@ -1170,6 +1258,8 @@ const hotAirBalloons = [
   },
 ]
 
+//const balloon = createBalloon({ body: 0xe74c3c }, [0, 3.6, 11]);
+
 const turtle = createTurtle()
 const seahorse = createSeahorse()
 //const dolphin = createDolphin()
@@ -1433,18 +1523,36 @@ async function animate() {
     b.mesh.position.y = b.baseY + Math.sin(t * b.speed + b.phase) * b.amplitude
   }
 
-  for (const balloon of hotAirBalloons) {
-    const angle = t * balloon.speed + balloon.phase
-    balloon.mesh.position.set(
-      balloon.centerX + Math.sin(angle) * balloon.radiusX,
-      balloon.baseY + Math.sin(t * balloon.bobSpeed + balloon.phase) * balloon.bobAmp,
-      balloon.centerZ + Math.cos(angle) * balloon.radiusZ
+  for (const haBalloon of hotAirBalloons) {
+    const angle = t * haBalloon.speed + haBalloon.phase
+    haBalloon.mesh.position.set(
+      haBalloon.centerX + Math.sin(angle) * haBalloon.radiusX,
+      haBalloon.baseY + Math.sin(t * haBalloon.bobSpeed + haBalloon.phase) * haBalloon.bobAmp,
+      haBalloon.centerZ + Math.cos(angle) * haBalloon.radiusZ
     )
-    balloon.mesh.rotation.z = Math.sin(t * 1.2 + balloon.phase) * 0.05
-    balloon.mesh.rotation.x = Math.cos(t * 0.8 + balloon.phase) * 0.03
-    balloon.mesh.rotation.y = -angle + Math.PI * 0.5
+    haBalloon.mesh.rotation.z = Math.sin(t * 1.2 + haBalloon.phase) * 0.05
+    haBalloon.mesh.rotation.x = Math.cos(t * 0.8 + haBalloon.phase) * 0.03
+    haBalloon.mesh.rotation.y = -angle + Math.PI * 0.5
   }
+/*
+  if (balloon) {
+    // 1. Gentle vertical bobbing
+    // We use the initial Y position (e.g., 5) as the baseline
+    balloon.mesh.position.y = 5 + Math.sin(t * 0.8) * 0.3;
 
+    // 2. Wind sway (rotation)
+    balloon.mesh.rotation.z = Math.sin(t * 1.2) * 0.05;
+    balloon.mesh.rotation.x = Math.cos(t * 0.8) * 0.03;
+
+    // 3. Flame flicker logic
+    if (balloon.flame) {
+      const flicker = 1 + Math.sin(t * 25) * 0.2;
+      balloon.flame.scale.set(flicker, flicker, flicker);
+      // Adjust brightness randomly for a realistic fire effect
+      balloon.flame.material.emissiveIntensity = 0.5 + Math.random() * 0.5;
+    }
+  }
+*/
   const turtleLoop = (Math.sin(t * 0.22) + 1) * 0.5
   const turtleShoreProgress = turtleLoop * turtleLoop * (3 - 2 * turtleLoop)
   turtle.mesh.position.set(
