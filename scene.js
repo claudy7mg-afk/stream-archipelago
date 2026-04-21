@@ -882,6 +882,167 @@ function createDolphin(position = [0.9, -0.08, 12.9], scale = 0.42) {
   return { mesh: dolphin, tail, dorsalFin, sideFins: [sideFinLeft, sideFinRight] }
 }
 
+function createDolphin2(position = [0.9, -0.08, 12.9], scale = 0.42) {
+  const dolphin = new THREE.Group()
+
+  // Main Body - Streamlined and slightly thicker for a "friendly" look
+  const body = new THREE.Mesh(sphereGeo, dolphinBodyMat)
+  body.scale.set(1.6, 0.45, 0.4) 
+  body.castShadow = true
+  dolphin.add(body)
+
+  // Melon (Forehead) - Integrated more smoothly
+  const melon = new THREE.Mesh(sphereGeo, dolphinBodyMat)
+  melon.position.set(0.65, 0.15, 0)
+  melon.scale.set(0.45, 0.35, 0.32)
+  dolphin.add(melon)
+
+  // Belly - Uses the lighter material for contrast
+  const belly = new THREE.Mesh(sphereGeo, dolphinBellyMat)
+  belly.position.set(0.1, -0.15, 0)
+  belly.scale.set(1.2, 0.25, 0.3)
+  dolphin.add(belly)
+
+  // Snout - Slightly shorter and rounded
+  const snout = new THREE.Mesh(cylGeo, dolphinBodyMat)
+  snout.position.set(1.1, 0.05, 0)
+  snout.rotation.z = Math.PI / 2
+  snout.scale.set(0.08, 0.4, 0.08)
+  dolphin.add(snout)
+
+  // Improved Dorsal Fin - Swept back
+  const dorsalFin = new THREE.Mesh(coneGeo, dolphinBodyMat)
+  dorsalFin.position.set(-0.2, 0.4, 0)
+  dorsalFin.rotation.z = -0.6 
+  dorsalFin.scale.set(0.12, 0.35, 0.08)
+  dolphin.add(dorsalFin)
+
+  // Side Fins (Pectoral Fins)
+  const sideFinLeft = new THREE.Mesh(coneGeo, dolphinBodyMat)
+  sideFinLeft.position.set(0.2, -0.1, 0.3)
+  sideFinLeft.rotation.set(1.2, 0, -0.5)
+  sideFinLeft.scale.set(0.1, 0.4, 0.15)
+  dolphin.add(sideFinLeft)
+
+  const sideFinRight = sideFinLeft.clone()
+  sideFinRight.position.z = -0.3
+  sideFinRight.rotation.set(-1.2, 0, -0.5)
+  dolphin.add(sideFinRight)
+
+  // Tail Group with Horizontal Flukes (Dolphins move tails vertically)
+  const tail = new THREE.Group()
+  tail.position.set(-1.4, 0, 0)
+  
+  const flukes = new THREE.Mesh(boxGeo, dolphinBodyMat)
+  flukes.scale.set(0.4, 0.05, 1.1) 
+  tail.add(flukes)
+  dolphin.add(tail)
+
+  dolphin.position.set(...position)
+  dolphin.scale.setScalar(scale)
+  scene.add(dolphin)
+
+  return { mesh: dolphin, tail, dorsalFin, sideFins: [sideFinLeft, sideFinRight] }
+}
+
+function createDolphin1(position = [0.9, -0.08, 12.9], scale = 0.42) {
+  const dolphin = new THREE.Group();
+
+  // --- BODY SEGMENTS (The "Spine" approach) ---
+  
+  // 1. CHEST (The thickest part)
+  const chest = new THREE.Mesh(sphereGeo, dolphinBodyMat);
+  chest.scale.set(0.8, 0.55, 0.45);
+  chest.position.set(0.3, 0, 0);
+  chest.castShadow = true;
+  dolphin.add(chest);
+
+  // 2. MID-BODY (Slightly smaller, blending backward)
+  const midBody = new THREE.Mesh(sphereGeo, dolphinBodyMat);
+  midBody.scale.set(0.9, 0.45, 0.38);
+  midBody.position.set(-0.3, -0.02, 0);
+  dolphin.add(midBody);
+
+  // 3. TAIL STOCK (The thin part leading to the flukes)
+  const tailStock = new THREE.Mesh(sphereGeo, dolphinBodyMat);
+  tailStock.scale.set(0.8, 0.25, 0.18);
+  tailStock.position.set(-1.0, -0.05, 0);
+  dolphin.add(tailStock);
+
+  // --- HEAD & SNOUT ---
+
+  // MELON (The forehead - slightly more bulbous and forward)
+  const melon = new THREE.Mesh(sphereGeo, dolphinBodyMat);
+  melon.position.set(0.75, 0.18, 0);
+  melon.scale.set(0.4, 0.35, 0.32);
+  dolphin.add(melon);
+
+  // BEAK (The snout - thinner and integrated lower)
+  const beak = new THREE.Mesh(sphereGeo, dolphinBodyMat);
+  beak.position.set(1.15, 0.02, 0);
+  beak.scale.set(0.45, 0.12, 0.12);
+  dolphin.add(beak);
+
+  // BELLY (White patch - scaled to fit the new chest/mid sections)
+  const belly = new THREE.Mesh(sphereGeo, dolphinBellyMat);
+  belly.position.set(0.2, -0.18, 0);
+  belly.scale.set(1.4, 0.25, 0.35);
+  dolphin.add(belly);
+
+  // --- FINS (Refined angles) ---
+
+  // DORSAL FIN (Moved further back, more "hooked")
+  const dorsalFin = new THREE.Mesh(coneGeo, dolphinBodyMat);
+  dorsalFin.position.set(-0.25, 0.42, 0);
+  dorsalFin.rotation.z = -0.9;
+  dorsalFin.scale.set(0.06, 0.5, 0.04); 
+  dolphin.add(dorsalFin);
+
+  // SIDE FINS (Longer and more swept back)
+  const sideFinLeft = new THREE.Mesh(coneGeo, dolphinBodyMat);
+  sideFinLeft.position.set(0.45, -0.15, 0.35);
+  sideFinLeft.rotation.set(1.1, 0, -0.8);
+  sideFinLeft.scale.set(0.07, 0.45, 0.15);
+  dolphin.add(sideFinLeft);
+
+  const sideFinRight = sideFinLeft.clone();
+  sideFinRight.position.z = -0.35;
+  sideFinRight.rotation.set(-1.1, 0, -0.8);
+  dolphin.add(sideFinRight);
+
+  // --- TAIL FLUKES ---
+  const tail = new THREE.Group();
+  tail.position.set(-1.6, -0.05, 0);
+
+  const flukeL = new THREE.Mesh(coneGeo, dolphinBodyMat);
+  flukeL.position.set(0, 0, 0.22);
+  flukeL.rotation.set(Math.PI / 2, 0, Math.PI / 1.8);
+  flukeL.scale.set(0.12, 0.55, 0.02);
+  tail.add(flukeL);
+
+  const flukeR = flukeL.clone();
+  flukeR.position.z = -0.22;
+  flukeR.rotation.x = -Math.PI / 2;
+  tail.add(flukeR);
+
+  dolphin.add(tail);
+
+  // --- EYES ---
+  const eyeGeo = new THREE.SphereGeometry(0.025, 12, 12);
+  const eyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+  const eyeL = new THREE.Mesh(eyeGeo, eyeMat);
+  eyeL.position.set(0.85, 0.08, 0.2);
+  const eyeR = eyeL.clone();
+  eyeR.position.z = -0.2;
+  dolphin.add(eyeL, eyeR);
+
+  dolphin.position.set(...position);
+  dolphin.scale.setScalar(scale);
+  scene.add(dolphin);
+
+  return { mesh: dolphin, tail, dorsalFin, sideFins: [sideFinLeft, sideFinRight] };
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // ─── BUILD THE WORLD ────────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1011,7 +1172,7 @@ const hotAirBalloons = [
 
 const turtle = createTurtle()
 const seahorse = createSeahorse()
-const dolphin = createDolphin()
+//const dolphin = createDolphin()
 
 // ─── Clouds (instanced) ────────────────────────────────────────────────────
 const cloudDefs = [
@@ -1058,7 +1219,8 @@ for (let c = 0; c < cloudDefs.length; c++) {
   }
   cloudInstanceData.push({
     baseX: cd.x,
-    baseY: cd.y,
+    baseY: cd.y-6,
+    baseZ: cd.z,
     speed: 0.15 + Math.random() * 0.2,
     drift: Math.random() * Math.PI * 2,
     indices,
@@ -1066,6 +1228,7 @@ for (let c = 0; c < cloudDefs.length; c++) {
   })
 }
 cloudInstancedMesh.instanceMatrix.needsUpdate = true
+cloudInstancedMesh.frustumCulled = false // Add this line
 scene.add(cloudInstancedMesh)
 
 // ─── Sea floaters (instanced) ───────────────────────────────────────────────
@@ -1311,7 +1474,7 @@ async function animate() {
   seahorse.tailSegments.forEach((segment, index) => {
     segment.position.x = -0.08 * index + Math.sin(t * 2.8 + index * 0.5) * 0.02 * (index + 1)
   })
-
+/*
   dolphin.mesh.position.set(
     2.2 - Math.sin(t * 0.55) * 1.5,
     -0.08 + Math.sin(t * 1.6) * 0.07,
@@ -1325,6 +1488,7 @@ async function animate() {
   dolphin.sideFins.forEach((fin, index) => {
     fin.rotation.y = (index === 0 ? 1 : -1) * Math.sin(t * 3.4) * 0.12
   })
+    */
 
   // Drifting clouds (instanced)
   for (const c of cloudInstanceData) {
@@ -1337,7 +1501,7 @@ async function animate() {
         new THREE.Vector3(
           c.baseX + sub.ox * c.s + dx,
           c.baseY + sub.oy * c.s + dy,
-          cloudDefs[cloudInstanceData.indexOf(c)].z + sub.oz * c.s
+          c.baseZ + sub.oz * c.s, // Use c.baseZ here
         ),
         _cq,
         new THREE.Vector3(sub.sx * c.s, sub.sy * c.s, sub.sz * c.s)
