@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Remix: 3D Scroll-Based Website </title>
+  <title>STREAM Festival</title>
   <style>
     * { margin: 0; padding: 0; outline: none !important; box-sizing: border-box; }
     canvas { display: block; outline: none !important; }
@@ -40,15 +40,117 @@
       overflow-x: hidden;
     }
 
+    .top-nav {
+      position: fixed;
+      top: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.16);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 12px 30px rgba(45, 52, 54, 0.12);
+      pointer-events: auto;
+    }
+
+    .top-nav button {
+      display: inline-flex;
+      align-items: center;
+      border: none;
+      background: rgba(255, 255, 255, 0.18);
+      color: white;
+      font-family: 'Quicksand', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      padding: 0.7rem 1rem;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .top-nav button:hover {
+      transform: translateY(-2px);
+      background: rgba(255, 255, 255, 0.28);
+      box-shadow: 0 8px 18px rgba(45, 52, 54, 0.12);
+    }
+
+    .top-nav button.active {
+      background: white;
+      color: var(--dark);
+      box-shadow: 0 10px 24px rgba(45, 52, 54, 0.18);
+    }
+
+    .language-menu {
+      position: relative;
+      margin-left: 1rem;
+    }
+
+    .language-trigger {
+      min-width: 5.5rem;
+      justify-content: space-between;
+      gap: 0.65rem;
+    }
+
+    .language-trigger::after {
+      content: '';
+      width: 0.45rem;
+      height: 0.45rem;
+      border-right: 2px solid currentColor;
+      border-bottom: 2px solid currentColor;
+      transform: rotate(45deg) translateY(-1px);
+      transition: transform 0.2s ease;
+    }
+
+    .language-menu.open .language-trigger::after {
+      transform: rotate(-135deg) translateY(-1px);
+    }
+
+    .language-options {
+      position: absolute;
+      top: calc(100% + 0.55rem);
+      right: 0;
+      display: grid;
+      gap: 0.45rem;
+      min-width: 100%;
+      padding: 0.55rem;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 12px 30px rgba(45, 52, 54, 0.14);
+      opacity: 0;
+      transform: translateY(-8px);
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .language-menu.open .language-options {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .language-option {
+      width: 100%;
+      justify-content: center;
+      text-align: center;
+    }
+
     /* ── Splash ── */
     .splash {
       height: 100vh;
       display: flex;
       flex-direction: column;
-      justify-content: center;
+      justify-content: flex-end;
       align-items: center;
       text-align: center;
       position: relative;
+      padding-bottom: 4rem;
       scroll-snap-align: start;
       pointer-events: none;
     }
@@ -73,6 +175,7 @@
       font-weight: 800;
       letter-spacing: -0.02em;
       line-height: 0.95;
+      margin-top: 0;
       margin-bottom: 1.5rem;
       color: white;
       text-shadow: 0 4px 20px rgba(0,0,0,0.08);
@@ -262,16 +365,53 @@
     /* ── Responsive ── */
     @media (max-width: 768px) {
       .section { padding: 4rem 0; }
+      .top-nav {
+        width: calc(100% - 1.5rem);
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        border-radius: 28px;
+      }
+
+      .top-nav button {
+        font-size: 0.63rem;
+        letter-spacing: 0.1em;
+        padding: 0.65rem 0.85rem;
+      }
+
+      .language-trigger,
+      .language-option {
+        font-size: 0.63rem;
+        letter-spacing: 0.1em;
+        padding: 0.65rem 0.85rem;
+      }
+
+      .language-menu {
+        margin-left: 0.25rem;
+      }
     }
   </style>
 </head>
 <body>
 
+  <nav class="top-nav" aria-label="Island navigation">
+    <button data-nav-home="true" data-i18n="nav.home" onclick="window.scrollTo({ top: 0, behavior: 'smooth' })">Home</button>
+    <button class="active" data-section-index="0" data-i18n="nav.island1" onclick="document.querySelectorAll('.sections .section')[0].scrollIntoView({ behavior: 'smooth' })">Activities</button>
+    <button data-section-index="1" data-i18n="nav.island2" onclick="document.querySelectorAll('.sections .section')[1].scrollIntoView({ behavior: 'smooth' })">Highlights</button>
+    <button data-section-index="2" data-i18n="nav.island3" onclick="document.querySelectorAll('.sections .section')[2].scrollIntoView({ behavior: 'smooth' })">About</button>
+    <div class="language-menu" id="language-menu">
+      <button class="language-trigger" id="language-trigger" type="button" aria-haspopup="true" aria-expanded="false">EN</button>
+      <div class="language-options" id="language-options" role="menu" aria-label="Language selector">
+        <button class="language-option" type="button" data-language="en" role="menuitem">EN</button>
+        <button class="language-option" type="button" data-language="nl" role="menuitem">NL</button>
+      </div>
+    </div>
+  </nav>
+
   <!-- Splash -->
   <section class="splash">
     <p class="overline">✦ Explore the miniature world ✦</p>
-    <h1>Archipelago<span>A Tiny World of Wonders</span></h1>
-    <p class="subtitle">Scroll to journey between islands</p>
+    <h1>STREAM Festival</h1>
     <button class="scroll-hint" onclick="document.querySelector('.sections .section').scrollIntoView({ behavior: 'smooth' })">Discover</button>
   </section>
 
@@ -279,31 +419,24 @@
   <div class="sections">
 
     <div class="section">
-      <div class="badge"><span class="icon">🏠</span> Island One</div>
+      <div class="badge"><span class="icon">🏠</span> Activities</div>
       <h2>Welcome<br>to the Village</h2>
       <div class="divider"></div>
       <p>Pastel-colored cottages nestle between rounded hills. Warm light spills from tiny windows onto cobblestone paths where stories grow like wildflowers.</p>
     </div>
 
     <div class="section">
-      <div class="badge"><span class="icon">🌿</span> Island Two</div>
+      <div class="badge"><span class="icon">🌿</span> Highlights</div>
       <h2>The Whispering<br>Garden</h2>
       <div class="divider"></div>
       <p>Trees with cotton-candy canopies sway gently in the breeze. Mushrooms glow softly, and abstract sculptures spin slowly like thoughts taking shape.</p>
     </div>
 
     <div class="section">
-      <div class="badge"><span class="icon">🏰</span> Island Three</div>
+      <div class="badge"><span class="icon">🏰</span> About</div>
       <h2>The Lookout<br>Tower</h2>
       <div class="divider"></div>
       <p>Rise above the clouds. From the tower's peak, every island is visible — a constellation of tiny worlds connected by winding bridges and shared dreams.</p>
-    </div>
-
-    <div class="section">
-      <div class="badge"><span class="icon">🌊</span> Island Four</div>
-      <h2>The Quiet<br>Pond</h2>
-      <div class="divider"></div>
-      <p>Lily pads drift on glass-still water. This is the place where the world slows down, where reflections are clearer than reality, and every ripple tells a story.</p>
     </div>
 
   </div>
@@ -316,6 +449,159 @@
     <a class="cta" href="javascript:void(0)" onclick="window.scrollTo({ top: 0, behavior: 'smooth' })">Start Again ↑</a>
   </div>
 
+  <script>
+    const navButtons = Array.from(document.querySelectorAll('.top-nav button[data-nav-home], .top-nav button[data-section-index]'))
+    const islandSections = Array.from(document.querySelectorAll('.sections .section'))
+    const languageMenu = document.getElementById('language-menu')
+    const languageTrigger = document.getElementById('language-trigger')
+    const languageOptions = Array.from(document.querySelectorAll('.language-option'))
+    const splashOverline = document.querySelector('.splash .overline')
+    const discoverButton = document.querySelector('.splash .scroll-hint')
+    const sectionBadges = Array.from(document.querySelectorAll('.section .badge'))
+    const sectionTitles = Array.from(document.querySelectorAll('.section h2'))
+    const sectionBodies = Array.from(document.querySelectorAll('.section p'))
+    const finaleOverline = document.querySelector('.finale .overline')
+    const finaleTitle = document.querySelector('.finale h2')
+    const finaleBody = document.querySelector('.finale p')
+    const finaleCta = document.querySelector('.finale .cta')
+    const translations = {
+      en: {
+        home: 'Home',
+        nav: ['Activities', 'Highlights', 'About', 'Island Four'],
+        splashOverline: 'Explore the miniature world',
+        discover: 'Discover',
+        badges: ['Activities', 'Highlights', 'About', 'Island Four'],
+        titles: [
+          'Welcome<br>to the Village',
+          'The Whispering<br>Garden',
+          'The Lookout<br>Tower',
+          'The Quiet<br>Pond',
+        ],
+        bodies: [
+          'Pastel-colored cottages nestle between rounded hills. Warm light spills from tiny windows onto cobblestone paths where stories grow like wildflowers.',
+          'Trees with cotton-candy canopies sway gently in the breeze. Mushrooms glow softly, and abstract sculptures spin slowly like thoughts taking shape.',
+          'Rise above the clouds. From the tower\'s peak, every island is visible - a constellation of tiny worlds connected by winding bridges and shared dreams.',
+          'Lily pads drift on glass-still water. This is the place where the world slows down, where reflections are clearer than reality, and every ripple tells a story.',
+        ],
+        finaleOverline: 'The Journey Continues',
+        finaleTitle: 'Every island<br>is a new<br>beginning.',
+        finaleBody: 'A miniature world of six islands, connected by bridges and filled with whimsy. Each one holds something different - a village, a garden, a quiet moment.',
+        finaleCta: 'Start Again',
+      },
+      nl: {
+        home: 'Home',
+        nav: ['Activiteiten', 'Hoogtepunten', 'Over', 'Eiland Vier'],
+        splashOverline: 'Verken de miniatuurwereld',
+        discover: 'Ontdek',
+        badges: ['Activiteiten', 'Hoogtepunten', 'Over', 'Eiland Vier'],
+        titles: [
+          'Welkom<br>in het Dorp',
+          'De Fluisterende<br>Tuin',
+          'De Uitkijk<br>Toren',
+          'De Stille<br>Vijver',
+        ],
+        bodies: [
+          'Pastelkleurige huisjes liggen tussen ronde heuvels. Warm licht valt uit kleine ramen op de kinderkopjes waar verhalen groeien als wilde bloemen.',
+          'Bomen met suikerspinachtige kruinen bewegen zacht in de wind. Paddenstoelen gloeien subtiel en abstracte sculpturen draaien langzaam als gedachten die vorm krijgen.',
+          'Stijg boven de wolken uit. Vanaf de top van de toren is elk eiland zichtbaar - een sterrenbeeld van kleine werelden, verbonden door slingerende bruggen en gedeelde dromen.',
+          'Leliebladen drijven op spiegelglad water. Hier vertraagt de wereld, worden reflecties helderder dan de werkelijkheid en vertelt elke rimpeling een verhaal.',
+        ],
+        finaleOverline: 'De Reis Gaat Verder',
+        finaleTitle: 'Elk eiland<br>is een nieuw<br>begin.',
+        finaleBody: 'Een miniatuurwereld van zes eilanden, verbonden door bruggen en vol verwondering. Elk eiland biedt iets anders - een dorp, een tuin, een stil moment.',
+        finaleCta: 'Opnieuw Beginnen',
+      },
+    }
+
+    function setBadgeText(badge, label) {
+      const icon = badge.querySelector('.icon')
+      badge.innerHTML = ''
+      if (icon) badge.appendChild(icon)
+      badge.append(` ${label}`)
+    }
+
+    function applyLanguage(language) {
+      const copy = translations[language] || translations.en
+      document.documentElement.lang = language
+      languageTrigger.textContent = language.toUpperCase()
+      languageOptions.forEach((option) => {
+        option.textContent = option.dataset.language.toUpperCase()
+      })
+      navButtons.forEach((button, index) => {
+        if (button.dataset.navHome === 'true') {
+          button.textContent = copy.home
+        } else {
+          button.textContent = copy.nav[index - 1]
+        }
+      })
+      languageOptions.forEach((option) => {
+        option.classList.toggle('active', option.dataset.language === language)
+      })
+      splashOverline.textContent = copy.splashOverline
+      discoverButton.textContent = copy.discover
+      sectionBadges.forEach((badge, index) => setBadgeText(badge, copy.badges[index]))
+      sectionTitles.forEach((title, index) => {
+        title.innerHTML = copy.titles[index]
+      })
+      sectionBodies.forEach((body, index) => {
+        body.textContent = copy.bodies[index]
+      })
+      finaleOverline.textContent = copy.finaleOverline
+      finaleTitle.innerHTML = copy.finaleTitle
+      finaleBody.textContent = copy.finaleBody
+      finaleCta.textContent = copy.finaleCta
+      localStorage.setItem('stream-language', language)
+    }
+
+    function setLanguageMenuOpen(isOpen) {
+      languageMenu.classList.toggle('open', isOpen)
+      languageTrigger.setAttribute('aria-expanded', String(isOpen))
+    }
+
+    function syncActiveNav() {
+      const viewportCenter = window.scrollY + window.innerHeight / 2
+      const firstSectionTop = islandSections[0]?.offsetTop ?? 0
+      const isHomeActive = viewportCenter < firstSectionTop
+      let activeIndex = 0
+
+      islandSections.forEach((section, index) => {
+        const top = section.offsetTop
+        if (viewportCenter >= top) activeIndex = index
+      })
+
+      navButtons.forEach((button) => {
+        if (button.dataset.navHome === 'true') {
+          button.classList.toggle('active', isHomeActive)
+          return
+        }
+
+        const buttonIndex = Number(button.dataset.sectionIndex)
+        button.classList.toggle('active', !isHomeActive && buttonIndex === activeIndex)
+      })
+    }
+
+    window.addEventListener('scroll', syncActiveNav, { passive: true })
+    window.addEventListener('resize', syncActiveNav)
+    languageTrigger.addEventListener('click', () => {
+      setLanguageMenuOpen(!languageMenu.classList.contains('open'))
+    })
+    languageOptions.forEach((option) => {
+      option.addEventListener('click', () => {
+        applyLanguage(option.dataset.language)
+        setLanguageMenuOpen(false)
+      })
+    })
+    document.addEventListener('click', (event) => {
+      if (!languageMenu.contains(event.target)) setLanguageMenuOpen(false)
+    })
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') setLanguageMenuOpen(false)
+    })
+
+    const savedLanguage = localStorage.getItem('stream-language') || 'en'
+    applyLanguage(savedLanguage)
+    syncActiveNav()
+  </script>
   <script type="module" src="/scene.js"></script>
 </body>
 </html>

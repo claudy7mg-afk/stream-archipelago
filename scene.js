@@ -249,6 +249,17 @@ const flagMat = makeLambert('#ff8fa3')
 const lilyMat = makeLambert('#5dba5a')
 const mushStemMat = makeLambert('#e8ddd0')
 const balconyMat = makeLambert('#d5c5f7')
+const balloonEnvelopeMat = makeMat('#9b7dff', 0.75)
+const balloonStripeMat = makeMat('#efe4ff', 0.82)
+const balloonBasketMat = makeMat('#8f5c3a', 0.9)
+const balloonRopeMat = makeLambert('#f7f1d7')
+const turtleShellMat = makeMat('#6f5a60', 0.92)
+const turtleSkinMat = makeLambert('#7fcf86')
+const turtleShellPatternMat = makeLambert('#385f2f')
+const seahorseBodyMat = makeMat('#f2a16d', 0.88)
+const seahorseFinMat = makeLambert('#ffd4b5')
+const dolphinBodyMat = makeMat('#7ca6c8', 0.78)
+const dolphinBellyMat = makeLambert('#dbe8f2')
 
 // ─── Shared geometries ──────────────────────────────────────────────────────
 const sphereGeo = new THREE.SphereGeometry(1, 24, 18)
@@ -257,6 +268,8 @@ const cylGeo = new THREE.CylinderGeometry(1, 1, 1, 16)
 const coneGeo = new THREE.ConeGeometry(1, 1, 16)
 const torusGeo = new THREE.TorusGeometry(1, 0.35, 12, 24)
 const signTextTextureCache = new Map()
+const posterTexture = new THREE.TextureLoader().load('res/STREAM Poster 2026.JPG')
+posterTexture.colorSpace = THREE.SRGBColorSpace
 
 // ─── Geometry merge collector ───────────────────────────────────────────────
 // Collects geometries per material for batch merging
@@ -459,6 +472,37 @@ function createSign(parent, x, y, z, text, rotY = 0) {
   g.add(textMesh)
 }
 
+function createPoster(parent, x, y, z, texture, options = {}) {
+  const {
+    rotY = 0,
+    width = 2.4,
+    aspect = 3756 / 1518,
+  } = options
+
+  const height = width / aspect
+  const g = new THREE.Group()
+  g.position.set(x, y, z)
+  g.rotation.y = rotY
+  parent.add(g)
+  parent.updateWorldMatrix(true, false)
+  g.updateWorldMatrix(true, false)
+
+  collectGeoInGroup(cylGeo, trunkMat, [-width * 0.32, -height * 0.35, -0.08], [0.06, height * 1.35, 0.06], null, g)
+  collectGeoInGroup(cylGeo, trunkMat, [width * 0.32, -height * 0.35, -0.08], [0.06, height * 1.35, 0.06], null, g)
+  collectGeoInGroup(boxGeo, signMat, [0, 0, -0.02], [width + 0.16, height + 0.16, 0.06], null, g)
+
+  const posterMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(width, height),
+    new THREE.MeshBasicMaterial({
+      map: texture,
+      toneMapped: false,
+      side: THREE.DoubleSide,
+    })
+  )
+  posterMesh.position.set(0, 0, 0.02)
+  g.add(posterMesh)
+}
+
 // ─── Helper: Bridge/Path (merged) ───────────────────────────────────────────
 function createBridge(x1, z1, x2, z2, y = 0.15) {
   const dx = x2 - x1, dz = z2 - z1
@@ -556,6 +600,288 @@ function createAbstractObjectLive(parent, x, y, z, type = 'torus') {
   }
 }
 
+function createHotAirBalloon(options = {}) {
+  const {
+    envelopeScale = [1.45, 1.8, 1.45],
+    stripeScale = [0.35, 2.2, 3.0],
+    basketScale = [0.5, 0.35, 0.5],
+    position = [0, 5.6, 11],
+    scale = 0.1625,
+    envelopeMat = balloonEnvelopeMat,
+    stripeMat = balloonStripeMat,
+  } = options
+  const balloon = new THREE.Group()
+
+  const envelope = new THREE.Mesh(sphereGeo, envelopeMat)
+  envelope.scale.set(...envelopeScale)
+  envelope.castShadow = true
+  envelope.receiveShadow = true
+  balloon.add(envelope)
+
+  const stripe1 = new THREE.Mesh(boxGeo, stripeMat)
+  stripe1.scale.set(...stripeScale)
+  stripe1.castShadow = true
+  balloon.add(stripe1)
+
+  const stripe2 = stripe1.clone()
+  stripe2.rotation.y = Math.PI / 2
+  balloon.add(stripe2)
+
+  const basket = new THREE.Mesh(boxGeo, balloonBasketMat)
+  basket.position.set(0, -2.5, 0)
+  basket.scale.set(...basketScale)
+  basket.castShadow = true
+  basket.receiveShadow = true
+  balloon.add(basket)
+
+  const ropeOffsets = [
+    [-0.42, -1.35, -0.42],
+    [0.42, -1.35, -0.42],
+    [-0.42, -1.35, 0.42],
+    [0.42, -1.35, 0.42],
+  ]
+
+  for (const [x, y, z] of ropeOffsets) {
+    const rope = new THREE.Mesh(cylGeo, balloonRopeMat)
+    rope.position.set(x, y - 0.45, z)
+    rope.scale.set(0.02, 1.1, 0.02)
+    rope.castShadow = false
+    rope.receiveShadow = false
+    balloon.add(rope)
+  }
+
+  balloon.position.set(...position)
+  balloon.scale.setScalar(scale)
+  scene.add(balloon)
+  return balloon
+}
+
+function createTurtle(position = [-2.1, -0.08, 12.4], scale = 0.22) {
+  const turtle = new THREE.Group()
+
+  const shell = new THREE.Mesh(sphereGeo, turtleShellMat)
+  shell.scale.set(1.08, 0.42, 1.36)
+  shell.castShadow = true
+  shell.receiveShadow = true
+  turtle.add(shell)
+
+  const shellCap = new THREE.Mesh(sphereGeo, turtleShellPatternMat)
+  shellCap.position.y = 0.12
+  shellCap.scale.set(0.72, 0.18, 0.96)
+  shellCap.castShadow = true
+  turtle.add(shellCap)
+
+  const shellRidge = new THREE.Mesh(boxGeo, turtleShellPatternMat)
+  shellRidge.position.set(0, 0.1, 0)
+  shellRidge.scale.set(0.14, 0.1, 1.2)
+  shellRidge.castShadow = true
+  turtle.add(shellRidge)
+
+  const neck = new THREE.Mesh(cylGeo, turtleSkinMat)
+  neck.position.set(0, 0, 0.92)
+  neck.rotation.x = Math.PI / 2
+  neck.scale.set(0.12, 0.28, 0.12)
+  neck.castShadow = true
+  turtle.add(neck)
+
+  const head = new THREE.Mesh(sphereGeo, turtleSkinMat)
+  head.position.set(0, 0.02, 1.26)
+  head.scale.set(0.34, 0.2, 0.44)
+  head.castShadow = true
+  turtle.add(head)
+
+  const tail = new THREE.Mesh(coneGeo, turtleSkinMat)
+  tail.position.set(0, -0.04, -1.18)
+  tail.rotation.x = Math.PI / 2
+  tail.scale.set(0.08, 0.18, 0.08)
+  tail.castShadow = true
+  turtle.add(tail)
+
+  const legOffsets = [
+    [-0.82, -0.12, 0.58],
+    [0.82, -0.12, 0.58],
+    [-0.74, -0.14, -0.52],
+    [0.74, -0.14, -0.52],
+  ]
+  const legs = []
+  for (const [index, [x, y, z]] of legOffsets.entries()) {
+    const leg = new THREE.Mesh(sphereGeo, turtleSkinMat)
+    leg.position.set(x, y, z)
+    const isFront = index < 2
+    leg.scale.set(isFront ? 0.34 : 0.26, 0.05, isFront ? 0.48 : 0.34)
+    leg.rotation.x = isFront ? -0.2 : 0.1
+    leg.castShadow = true
+    turtle.add(leg)
+    legs.push(leg)
+  }
+
+  turtle.position.set(...position)
+  turtle.scale.setScalar(scale)
+  scene.add(turtle)
+
+  return { mesh: turtle, head, neck, legs }
+}
+
+function createSeahorse(position = [2.4, -0.18, 12.4], scale = 0.198) {
+  const seahorse = new THREE.Group()
+
+  const torso = new THREE.Mesh(sphereGeo, seahorseBodyMat)
+  torso.scale.set(0.42, 0.78, 0.28)
+  torso.castShadow = true
+  seahorse.add(torso)
+
+  const belly = new THREE.Mesh(sphereGeo, seahorseFinMat)
+  belly.position.set(0.08, -0.02, 0.12)
+  belly.scale.set(0.18, 0.58, 0.16)
+  belly.castShadow = true
+  seahorse.add(belly)
+
+  const neck = new THREE.Mesh(cylGeo, seahorseBodyMat)
+  neck.position.set(0.02, 0.56, 0.02)
+  neck.rotation.z = -0.28
+  neck.scale.set(0.12, 0.42, 0.12)
+  neck.castShadow = true
+  seahorse.add(neck)
+
+  const head = new THREE.Mesh(sphereGeo, seahorseBodyMat)
+  head.position.set(0.16, 0.92, 0.04)
+  head.scale.set(0.22, 0.2, 0.24)
+  head.castShadow = true
+  seahorse.add(head)
+
+  const snout = new THREE.Mesh(cylGeo, seahorseBodyMat)
+  snout.position.set(0.34, 0.88, 0.05)
+  snout.rotation.z = Math.PI / 2
+  snout.scale.set(0.06, 0.24, 0.06)
+  snout.castShadow = true
+  seahorse.add(snout)
+
+  const crest = new THREE.Mesh(coneGeo, seahorseFinMat)
+  crest.position.set(0.05, 1.08, 0.02)
+  crest.rotation.z = -0.15
+  crest.scale.set(0.08, 0.2, 0.08)
+  crest.castShadow = true
+  seahorse.add(crest)
+
+  const fin = new THREE.Mesh(boxGeo, seahorseFinMat)
+  fin.position.set(-0.12, 0.28, 0)
+  fin.rotation.z = 0.3
+  fin.scale.set(0.05, 0.34, 0.22)
+  fin.castShadow = true
+  seahorse.add(fin)
+
+  const tail = new THREE.Group()
+  tail.position.set(-0.04, -0.7, 0)
+  const tailSegments = []
+  for (let i = 0; i < 4; i++) {
+    const segment = new THREE.Mesh(sphereGeo, seahorseBodyMat)
+    segment.position.set(-0.08 * i, -0.18 * i, 0)
+    segment.scale.set(0.16 - i * 0.02, 0.13 - i * 0.015, 0.16 - i * 0.02)
+    segment.castShadow = true
+    tail.add(segment)
+    tailSegments.push(segment)
+  }
+  seahorse.add(tail)
+
+  seahorse.position.set(...position)
+  seahorse.scale.setScalar(scale)
+  seahorse.rotation.y = -0.5
+  scene.add(seahorse)
+
+  return { mesh: seahorse, head, fin, tail, tailSegments }
+}
+
+function createDolphin(position = [0.9, -0.08, 12.9], scale = 0.42) {
+  const dolphin = new THREE.Group()
+
+  const body = new THREE.Mesh(sphereGeo, dolphinBodyMat)
+  body.scale.set(1.45, 0.34, 0.34)
+  body.castShadow = true
+  dolphin.add(body)
+
+  const shoulder = new THREE.Mesh(sphereGeo, dolphinBodyMat)
+  shoulder.position.set(0.35, 0.04, 0)
+  shoulder.scale.set(0.82, 0.24, 0.24)
+  shoulder.castShadow = true
+  dolphin.add(shoulder)
+
+  const melon = new THREE.Mesh(sphereGeo, dolphinBodyMat)
+  melon.position.set(0.98, 0.1, 0)
+  melon.scale.set(0.42, 0.24, 0.24)
+  melon.castShadow = true
+  dolphin.add(melon)
+
+  const belly = new THREE.Mesh(sphereGeo, dolphinBellyMat)
+  belly.position.set(0.25, -0.1, 0)
+  belly.scale.set(1.08, 0.16, 0.2)
+  belly.castShadow = true
+  dolphin.add(belly)
+
+  const snout = new THREE.Mesh(cylGeo, dolphinBodyMat)
+  snout.position.set(1.45, 0.02, 0)
+  snout.rotation.z = Math.PI / 2
+  snout.scale.set(0.07, 0.5, 0.07)
+  snout.castShadow = true
+  dolphin.add(snout)
+
+  const lowerJaw = new THREE.Mesh(cylGeo, dolphinBellyMat)
+  lowerJaw.position.set(1.43, -0.05, 0)
+  lowerJaw.rotation.z = Math.PI / 2
+  lowerJaw.scale.set(0.045, 0.42, 0.05)
+  lowerJaw.castShadow = true
+  dolphin.add(lowerJaw)
+
+  const dorsalFin = new THREE.Mesh(coneGeo, dolphinBodyMat)
+  dorsalFin.position.set(-0.18, 0.32, 0)
+  dorsalFin.rotation.z = -0.2
+  dorsalFin.scale.set(0.1, 0.26, 0.08)
+  dorsalFin.castShadow = true
+  dolphin.add(dorsalFin)
+
+  const sideFinLeft = new THREE.Mesh(coneGeo, dolphinBodyMat)
+  sideFinLeft.position.set(0.08, -0.06, 0.26)
+  sideFinLeft.rotation.x = Math.PI / 2
+  sideFinLeft.rotation.z = -0.95
+  sideFinLeft.scale.set(0.08, 0.34, 0.12)
+  sideFinLeft.castShadow = true
+  dolphin.add(sideFinLeft)
+
+  const sideFinRight = sideFinLeft.clone()
+  sideFinRight.position.z = -0.28
+  sideFinRight.rotation.z = 0.95
+  dolphin.add(sideFinRight)
+
+  const tailPeduncle = new THREE.Mesh(cylGeo, dolphinBodyMat)
+  tailPeduncle.position.set(-1.45, -0.02, 0)
+  tailPeduncle.rotation.z = Math.PI / 2
+  tailPeduncle.scale.set(0.07, 0.52, 0.07)
+  tailPeduncle.castShadow = true
+  dolphin.add(tailPeduncle)
+
+  const tail = new THREE.Group()
+  tail.position.set(-1.9, 0, 0)
+
+  const flukeTop = new THREE.Mesh(coneGeo, dolphinBodyMat)
+  flukeTop.rotation.z = -Math.PI / 2.35
+  flukeTop.position.set(-0.03, 0.18, 0)
+  flukeTop.scale.set(0.08, 0.42, 0.11)
+  flukeTop.castShadow = true
+  tail.add(flukeTop)
+
+  const flukeBottom = flukeTop.clone()
+  flukeBottom.position.y = -0.18
+  flukeBottom.rotation.z = Math.PI / 2.35
+  tail.add(flukeBottom)
+  dolphin.add(tail)
+
+  dolphin.position.set(...position)
+  dolphin.scale.setScalar(scale)
+  dolphin.rotation.y = 0.4
+  scene.add(dolphin)
+
+  return { mesh: dolphin, tail, dorsalFin, sideFins: [sideFinLeft, sideFinRight] }
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // ─── BUILD THE WORLD ────────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════════════
@@ -567,7 +893,7 @@ island1.updateWorldMatrix(true, false)
 createTree(island1, -1.5, -0.8, 1.0, 0.55, 'round')
 createTree(island1, 1.8, 0.5, 1.3, 0.65, 'round')
 createTree(island1, -0.5, 1.5, 0.8, 0.4, 'cone')
-createSign(island1, 0, 1.2, 3, '🏠 Welcome!', 0.1)
+createPoster(island1, 0.1, 3.4, -0.2, posterTexture, { rotY: 0.08, width: 10.34 })
 createAbstractObjectMerged(island1, 0.8, 1.5, -0.5, 'torus')
 markBouncing(createAbstractObjectLive(island1, -1, 1.8, 0.8, 'sphere'), 1.8, 0.2, 1.2, 0)
 
@@ -675,6 +1001,17 @@ createBridge(6.5, -2, 7.5, -11)
 
 // ─── Flush all merged static geometry ───────────────────────────────────────
 flushMergedGeometries()
+
+const hotAirBalloons = [
+  {
+    mesh: createHotAirBalloon({ position: [0, 5.6, 11], scale: 0.1625 }),
+    centerX: 0, radiusX: 3.5, radiusZ: 1.8, baseY: 5.6, speed: 0.12, bobSpeed: 0.9, bobAmp: 0.45, centerZ: 11, phase: 0,
+  },
+]
+
+const turtle = createTurtle()
+const seahorse = createSeahorse()
+const dolphin = createDolphin()
 
 // ─── Clouds (instanced) ────────────────────────────────────────────────────
 const cloudDefs = [
@@ -932,6 +1269,62 @@ async function animate() {
   for (const b of bouncingObjects) {
     b.mesh.position.y = b.baseY + Math.sin(t * b.speed + b.phase) * b.amplitude
   }
+
+  for (const balloon of hotAirBalloons) {
+    const angle = t * balloon.speed + balloon.phase
+    balloon.mesh.position.set(
+      balloon.centerX + Math.sin(angle) * balloon.radiusX,
+      balloon.baseY + Math.sin(t * balloon.bobSpeed + balloon.phase) * balloon.bobAmp,
+      balloon.centerZ + Math.cos(angle) * balloon.radiusZ
+    )
+    balloon.mesh.rotation.z = Math.sin(t * 1.2 + balloon.phase) * 0.05
+    balloon.mesh.rotation.x = Math.cos(t * 0.8 + balloon.phase) * 0.03
+    balloon.mesh.rotation.y = -angle + Math.PI * 0.5
+  }
+
+  const turtleLoop = (Math.sin(t * 0.22) + 1) * 0.5
+  const turtleShoreProgress = turtleLoop * turtleLoop * (3 - 2 * turtleLoop)
+  turtle.mesh.position.set(
+    -2.1 + turtleShoreProgress * 0.85,
+    -0.08 + turtleShoreProgress * 0.88 + Math.sin(t * 4.4) * 0.015,
+    12.4 - turtleShoreProgress * 1.95
+  )
+  turtle.mesh.rotation.y = -0.42 + Math.sin(t * 0.22) * 0.18
+  turtle.neck.rotation.x = Math.PI / 2 + Math.sin(t * 2.2) * 0.06
+  turtle.head.rotation.x = Math.sin(t * 2.2) * 0.08
+  turtle.legs.forEach((leg, index) => {
+    const stride = Math.sin(t * 5 + index * Math.PI * 0.5) * 0.045
+    leg.position.y = -0.15 + stride
+    leg.rotation.z = stride * (index < 2 ? 4.6 : 3.2)
+  })
+
+  seahorse.mesh.position.set(
+    2.4 + Math.sin(t * 0.7) * 0.35,
+    -0.18 + Math.sin(t * 2.4) * 0.12,
+    12.4 + Math.cos(t * 0.9) * 0.4
+  )
+  seahorse.mesh.rotation.y = -0.5 + Math.sin(t * 0.7) * 0.18
+  seahorse.mesh.rotation.z = Math.sin(t * 1.6) * 0.08
+  seahorse.head.rotation.z = Math.sin(t * 1.6 + 0.5) * 0.12
+  seahorse.fin.rotation.y = Math.sin(t * 6) * 0.5
+  seahorse.tail.rotation.z = -0.55 + Math.sin(t * 2.8) * 0.18
+  seahorse.tailSegments.forEach((segment, index) => {
+    segment.position.x = -0.08 * index + Math.sin(t * 2.8 + index * 0.5) * 0.02 * (index + 1)
+  })
+
+  dolphin.mesh.position.set(
+    2.2 - Math.sin(t * 0.55) * 1.5,
+    -0.08 + Math.sin(t * 1.6) * 0.07,
+    12.15 + Math.cos(t * 0.55) * 0.25
+  )
+  dolphin.mesh.rotation.y = -Math.PI + Math.cos(t * 0.55) * 0.12
+  dolphin.mesh.rotation.x = 0
+  dolphin.mesh.rotation.z = 0
+  dolphin.tail.rotation.y = Math.sin(t * 6.5) * 0.45
+  dolphin.dorsalFin.rotation.x = Math.sin(t * 1.2) * 0.05
+  dolphin.sideFins.forEach((fin, index) => {
+    fin.rotation.y = (index === 0 ? 1 : -1) * Math.sin(t * 3.4) * 0.12
+  })
 
   // Drifting clouds (instanced)
   for (const c of cloudInstanceData) {
