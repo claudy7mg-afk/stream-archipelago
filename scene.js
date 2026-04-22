@@ -253,9 +253,12 @@ const balloonEnvelopeMat = makeMat('#9b7dff', 0.75)
 const balloonStripeMat = makeMat('#efe4ff', 0.82)
 const balloonBasketMat = makeMat('#8f5c3a', 0.9)
 const balloonRopeMat = makeLambert('#f7f1d7')
-const turtleShellMat = makeMat('#6f5a60', 0.92)
-const turtleSkinMat = makeLambert('#7fcf86')
-const turtleShellPatternMat = makeLambert('#385f2f')
+const turtleShellMat = makeMat('#4d6b22', 0.82)
+const turtleSkinMat = makeMat('#5dc86e', 0.9)
+const turtleShellPatternMat = makeMat('#243d0e', 0.85)
+const turtleBellyMat = makeLambert('#c2dba0')
+const turtleEyeMat = makeLambert('#18180a')
+const turtleEyeGleamMat = makeLambert('#f0f0f0')
 const seahorseBodyMat = makeMat('#f2a16d', 0.88)
 const seahorseFinMat = makeLambert('#ffd4b5')
 const dolphinBodyMat = makeMat('#7ca6c8', 0.78)
@@ -696,24 +699,6 @@ function createHotAirBalloon(options = {}) {
     band.scale.set(1, 0.95, 1) // Slightly flatten the rings
     balloon.add(band)
   }
-  /*
-  const balloon = new THREE.Group()
-
-  const envelope = new THREE.Mesh(sphereGeo, envelopeMat)
-  envelope.scale.set(...envelopeScale)
-  envelope.castShadow = true
-  envelope.receiveShadow = true
-  balloon.add(envelope)
-
-  const stripe1 = new THREE.Mesh(boxGeo, stripeMat)
-  stripe1.scale.set(...stripeScale)
-  stripe1.castShadow = true
-  balloon.add(stripe1)
-
-  const stripe2 = stripe1.clone()
-  stripe2.rotation.y = Math.PI / 2
-  balloon.add(stripe2)
-  */
 
   const basket = new THREE.Mesh(boxGeo, balloonBasketMat)
   basket.position.set(0, -2.5, 0)
@@ -744,7 +729,7 @@ function createHotAirBalloon(options = {}) {
   return balloon
 }
 
-function createTurtle(position = [-2.1, -0.08, 12.4], scale = 0.22) {
+function createTurtle(position = [8.0, -0.15, 8.5], scale = 0.22) {
   const turtle = new THREE.Group()
 
   const shell = new THREE.Mesh(sphereGeo, turtleShellMat)
@@ -765,6 +750,23 @@ function createTurtle(position = [-2.1, -0.08, 12.4], scale = 0.22) {
   shellRidge.castShadow = true
   turtle.add(shellRidge)
 
+  const costalPositions = [
+    [-0.48, 0.24, 0.46], [0.48, 0.24, 0.46],
+    [-0.54, 0.22, 0.04], [0.54, 0.22, 0.04],
+    [-0.48, 0.20, -0.42], [0.48, 0.20, -0.42],
+  ]
+  for (const [x, y, z] of costalPositions) {
+    const scute = new THREE.Mesh(sphereGeo, turtleShellPatternMat)
+    scute.position.set(x, y, z)
+    scute.scale.set(0.28, 0.07, 0.3)
+    turtle.add(scute)
+  }
+
+  const plastron = new THREE.Mesh(sphereGeo, turtleBellyMat)
+  plastron.position.y = -0.14
+  plastron.scale.set(0.92, 0.1, 1.18)
+  turtle.add(plastron)
+
   const neck = new THREE.Mesh(cylGeo, turtleSkinMat)
   neck.position.set(0, 0, 0.92)
   neck.rotation.x = Math.PI / 2
@@ -777,6 +779,22 @@ function createTurtle(position = [-2.1, -0.08, 12.4], scale = 0.22) {
   head.scale.set(0.34, 0.2, 0.44)
   head.castShadow = true
   turtle.add(head)
+
+  const snout = new THREE.Mesh(sphereGeo, turtleSkinMat)
+  snout.position.set(0, 0.01, 1.65)
+  snout.scale.set(0.1, 0.08, 0.1)
+  turtle.add(snout)
+
+  for (const side of [-1, 1]) {
+    const eye = new THREE.Mesh(sphereGeo, turtleEyeMat)
+    eye.position.set(side * 0.3, 0.1, 1.3)
+    eye.scale.setScalar(0.065)
+    turtle.add(eye)
+    const gleam = new THREE.Mesh(sphereGeo, turtleEyeGleamMat)
+    gleam.position.set(side * 0.32, 0.12, 1.36)
+    gleam.scale.setScalar(0.022)
+    turtle.add(gleam)
+  }
 
   const tail = new THREE.Mesh(coneGeo, turtleSkinMat)
   tail.position.set(0, -0.04, -1.18)
@@ -1534,33 +1552,23 @@ async function animate() {
     haBalloon.mesh.rotation.x = Math.cos(t * 0.8 + haBalloon.phase) * 0.03
     haBalloon.mesh.rotation.y = -angle + Math.PI * 0.5
   }
-/*
-  if (balloon) {
-    // 1. Gentle vertical bobbing
-    // We use the initial Y position (e.g., 5) as the baseline
-    balloon.mesh.position.y = 5 + Math.sin(t * 0.8) * 0.3;
 
-    // 2. Wind sway (rotation)
-    balloon.mesh.rotation.z = Math.sin(t * 1.2) * 0.05;
-    balloon.mesh.rotation.x = Math.cos(t * 0.8) * 0.03;
-
-    // 3. Flame flicker logic
-    if (balloon.flame) {
-      const flicker = 1 + Math.sin(t * 25) * 0.2;
-      balloon.flame.scale.set(flicker, flicker, flicker);
-      // Adjust brightness randomly for a realistic fire effect
-      balloon.flame.material.emissiveIntensity = 0.5 + Math.random() * 0.5;
-    }
-  }
-*/
-  const turtleLoop = (Math.sin(t * 0.22) + 1) * 0.5
-  const turtleShoreProgress = turtleLoop * turtleLoop * (3 - 2 * turtleLoop)
+  const turtlePhase = t * 0.07
+  const turtleX = Math.cos(turtlePhase) * 8.0
+  // Island 1: radius=4, scaleX=1.5, scaleZ=0.8, topMesh scaleY = 1.5/4*0.7 = 0.2625
+  // Turtle walks at world Z=8.5 → island-local z=0.5; precompute z term: (0.5/0.8)^2 = 0.39
+  const turtleIslandSq = 16 - (turtleX / 1.5) ** 2 - 0.39
+  const turtleBaseY = turtleIslandSq > 0
+    ? 0.2625 * Math.sqrt(turtleIslandSq) + 0.05
+    : 0
+  const turtleSwimTilt = Math.max(0, Math.min(1, (1 - turtleIslandSq) / 5))
   turtle.mesh.position.set(
-    -2.1 + turtleShoreProgress * 0.85,
-    -0.08 + turtleShoreProgress * 0.88 + Math.sin(t * 4.4) * 0.015,
-    12.4 - turtleShoreProgress * 1.95
+    turtleX,
+    turtleBaseY + Math.sin(t * 5) * 0.012,
+    8.5 + Math.sin(t * 2.3) * 0.12
   )
-  turtle.mesh.rotation.y = -0.42 + Math.sin(t * 0.22) * 0.18
+  turtle.mesh.rotation.x = -0.45 * turtleSwimTilt
+  turtle.mesh.rotation.y = -(Math.PI / 2) * Math.tanh(Math.sin(turtlePhase) * 4)
   turtle.neck.rotation.x = Math.PI / 2 + Math.sin(t * 2.2) * 0.06
   turtle.head.rotation.x = Math.sin(t * 2.2) * 0.08
   turtle.legs.forEach((leg, index) => {
