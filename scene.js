@@ -44,10 +44,10 @@ const params = {
   cameraTransitionDuration: 1.25,
   blur: 0,
   sunColor: '#fff5e6',
-  sunIntensity: 2.2,
+  sunIntensity: 3.2,
   ambientColor: '#b8d4f0',
-  ambientIntensity: 0.8,
-  exposure: 1.15,
+  ambientIntensity: 1.1,
+  exposure: 1.35,
   fogEnabled: true,
   fogColor: '#dce8f5',
   fogDensity: 0.012,
@@ -201,7 +201,7 @@ const ambientLight = new THREE.AmbientLight(params.ambientColor, params.ambientI
 scene.add(ambientLight)
 
 // Soft hemisphere light for extra fill
-const hemiLight = new THREE.HemisphereLight('#c8e6ff', '#ffe8c8', 0.4)
+const hemiLight = new THREE.HemisphereLight('#c8e6ff', '#ffe8c8', 0.6)
 scene.add(hemiLight)
 
 // ─── Sky Gradient ───────────────────────────────────────────────────────────
