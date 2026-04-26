@@ -1,3 +1,6 @@
 node_modules
 dist
 .DS_Store
+.github/prompts/caveman.instructions.md
+.github/prompts/caveman.prompts.md
+.vscode/caveman.code-snippets

@@ -274,6 +274,34 @@ const signTextTextureCache = new Map()
 const posterTexture = new THREE.TextureLoader().load('res/STREAM Poster 2026.JPG')
 posterTexture.colorSpace = THREE.SRGBColorSpace
 
+let workshop1Aspect = 1, workshop2Aspect = 1, workshop3Aspect = 1
+let workshop1Texture, workshop2Texture, workshop3Texture
+
+const textureLoader = new THREE.TextureLoader()
+const texturesReady = Promise.all([
+  new Promise((resolve) => {
+    workshop1Texture = textureLoader.load('res/workshop1.jpeg', (tex) => {
+      workshop1Aspect = tex.image.width / tex.image.height
+      resolve()
+    })
+    workshop1Texture.colorSpace = THREE.SRGBColorSpace
+  }),
+  new Promise((resolve) => {
+    workshop2Texture = textureLoader.load('res/workshop2.png', (tex) => {
+      workshop2Aspect = tex.image.width / tex.image.height
+      resolve()
+    })
+    workshop2Texture.colorSpace = THREE.SRGBColorSpace
+  }),
+  new Promise((resolve) => {
+    workshop3Texture = textureLoader.load('res/workshop3.png', (tex) => {
+      workshop3Aspect = tex.image.width / tex.image.height
+      resolve()
+    })
+    workshop3Texture.colorSpace = THREE.SRGBColorSpace
+  }),
+])
+
 // ─── Geometry merge collector ───────────────────────────────────────────────
 // Collects geometries per material for batch merging
 const mergeCollector = new Map()
@@ -729,7 +757,7 @@ function createHotAirBalloon(options = {}) {
   return balloon
 }
 
-function createTurtle(position = [8.0, -0.15, 8.5], scale = 0.22) {
+function createTurtle(position = [8.0, -0.35, 8.5], scale = 0.22) {
   const turtle = new THREE.Group()
 
   const shell = new THREE.Mesh(sphereGeo, turtleShellMat)
@@ -1181,7 +1209,12 @@ createBuilding(island2, 1.2, 0.5, 0.8, 1.8, 0.8, 1)
 createBuilding(island2, -0.2, 1.5, 0.7, 1.1, 0.7, 2)
 createTree(island2, -2.2, 1, 1.1, 0.5, 'cone')
 createTree(island2, 2.3, -0.8, 0.9, 0.45, 'round')
-createSign(island2, 0, 1.6, 2.5, '🏠 Village', 0.2)
+
+texturesReady.then(() => {
+  createPoster(island2, -0.8, 2.0, 1.2, workshop1Texture, { rotY: 0.15, width: 1.8, aspect: workshop1Aspect })
+  createPoster(island2, 0, 2.0, 4.5, workshop2Texture, { rotY: 0, width: 1.8, aspect: workshop2Aspect })
+  createPoster(island2, 1.8, 2.0, 4.2, workshop3Texture, { rotY: 0.25, width: 1.8, aspect: workshop3Aspect })
+})
 
 // Lamp post (merged)
 collectGeoInGroup(cylGeo, lampPostMat, [1.8, 0.7, 1.5], [0.04, 1.4, 0.04], null, island2)
@@ -1560,12 +1593,12 @@ async function animate() {
   const turtleIslandSq = 16 - (turtleX / 1.5) ** 2 - 0.39
   const turtleBaseY = turtleIslandSq > 0
     ? 0.2625 * Math.sqrt(turtleIslandSq) + 0.05
-    : 0
+    : -0.30
   const turtleSwimTilt = Math.max(0, Math.min(1, (1 - turtleIslandSq) / 5))
   turtle.mesh.position.set(
     turtleX,
     turtleBaseY + Math.sin(t * 5) * 0.012,
-    8.5 + Math.sin(t * 2.3) * 0.12
+    10 + Math.sin(t * 2.3) * 0.12
   )
   turtle.mesh.rotation.x = -0.45 * turtleSwimTilt
   turtle.mesh.rotation.y = -(Math.PI / 2) * Math.tanh(Math.sin(turtlePhase) * 4)
