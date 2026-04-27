@@ -503,6 +503,61 @@ function createSign(parent, x, y, z, text, rotY = 0) {
   g.add(textMesh)
 }
 
+function createDynamicPanelSign(parent, x, y, z, sectionIndex, rotY = 0) {
+  const g = new THREE.Group()
+  g.position.set(x, y, z)
+  g.rotation.y = rotY
+  parent.add(g)
+  parent.updateWorldMatrix(true, false)
+  g.updateWorldMatrix(true, false)
+
+  const panelW = 3.5
+  const panelH = 1.6
+
+  const boxGeo2 = new THREE.BoxGeometry(panelW, panelH, 0.1)
+  const panelMesh = new THREE.Mesh(boxGeo2, signMat)
+  panelMesh.castShadow = true
+  panelMesh.receiveShadow = true
+  panelMesh.position.z = 0
+  g.add(panelMesh)
+
+  const textMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(panelW * 0.85, panelH * 0.75),
+    new THREE.MeshBasicMaterial({
+      map: getSignTextTexture(''),
+      transparent: true,
+      alphaTest: 0.01,
+      toneMapped: false,
+      side: THREE.DoubleSide
+    })
+  )
+  textMesh.position.z = 0.08
+  g.add(textMesh)
+
+  // Store reference for updates
+  g.userData.textMesh = textMesh
+  g.userData.sectionIndex = sectionIndex
+  window.panelSignGroups = window.panelSignGroups || []
+  window.panelSignGroups.push(g)
+
+  // Initialize with section content
+  setTimeout(() => {
+    const sections = document.querySelectorAll('.sections .section')
+    if (sections[sectionIndex]) {
+      const badge = sections[sectionIndex].querySelector('.badge')
+      const title = sections[sectionIndex].querySelector('h2')
+      if (badge && title) {
+        const badgeText = badge.textContent.trim()
+        // Convert <br> to newlines
+        const titleHTML = title.innerHTML
+        const titleText = titleHTML.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>/g, '').trim()
+        const signText = badgeText + '\n' + titleText
+        textMesh.material.map = getSignTextTexture(signText)
+      }
+    }
+  }, 100)
+}
+
 function createPoster(parent, x, y, z, texture, options = {}) {
   const {
     rotY = 0,
@@ -584,23 +639,62 @@ function getSignTextTexture(text) {
 
   const canvas = document.createElement('canvas')
   canvas.width = 612
-  canvas.height = 150
+  canvas.height = 400
   const ctx = canvas.getContext('2d')
 
   ctx.clearRect(0, 0, canvas.width, canvas.height)
-  ctx.font = '700 90px Quicksand, "Segoe UI Emoji", "Apple Color Emoji", sans-serif'
+  ctx.font = '700 60px Quicksand, "Segoe UI Emoji", "Apple Color Emoji", sans-serif'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.lineJoin = 'round'
-  ctx.strokeStyle = '#000000' //'#fff7da'
-  ctx.lineWidth = 14
-  ctx.strokeText(text, canvas.width / 2, canvas.height / 2)
-  ctx.fillStyle = '#ffffff' //'#3da828' // '#fff7da' //'#6a4325'
-  ctx.fillText(text, canvas.width / 2, canvas.height / 2)
-  //ctx.fillText(text, canvas.width / 2, canvas.height / 2); // Draw twice for better opacity
+  ctx.strokeStyle = '#000000'
+  ctx.lineWidth = 10
+
+  const lines = text.split('\n')
+  const lineHeight = 80
+  const startY = 80
+
+  lines.forEach((line, i) => {
+    const y = startY + i * lineHeight
+    ctx.strokeText(line, canvas.width / 2, y)
+  })
+
+  ctx.fillStyle = '#ffffff'
+  lines.forEach((line, i) => {
+    const y = startY + i * lineHeight
+    ctx.fillText(line, canvas.width / 2, y)
+  })
+
+  // Draw button (badge style - light blue with dark text)
+  const buttonY = 310
+  const buttonWidth = 300
+  const buttonHeight = 75
+  const buttonX = canvas.width / 2 - buttonWidth / 2
+  const buttonRadius = 37
+
+  // Button background (light blue like accent2 badge)
+  ctx.fillStyle = '#a5d8ff'
+  ctx.beginPath()
+  ctx.moveTo(buttonX + buttonRadius, buttonY)
+  ctx.lineTo(buttonX + buttonWidth - buttonRadius, buttonY)
+  ctx.quadraticCurveTo(buttonX + buttonWidth, buttonY, buttonX + buttonWidth, buttonY + buttonRadius)
+  ctx.lineTo(buttonX + buttonWidth, buttonY + buttonHeight - buttonRadius)
+  ctx.quadraticCurveTo(buttonX + buttonWidth, buttonY + buttonHeight, buttonX + buttonWidth - buttonRadius, buttonY + buttonHeight)
+  ctx.lineTo(buttonX + buttonRadius, buttonY + buttonHeight)
+  ctx.quadraticCurveTo(buttonX, buttonY + buttonHeight, buttonX, buttonY + buttonHeight - buttonRadius)
+  ctx.lineTo(buttonX, buttonY + buttonRadius)
+  ctx.quadraticCurveTo(buttonX, buttonY, buttonX + buttonRadius, buttonY)
+  ctx.closePath()
+  ctx.fill()
+
+  // Button text (dark, uppercase, bold)
+  ctx.font = 'bold 36px Quicksand, sans-serif'
+  ctx.fillStyle = '#2d3436'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText('DISCOVER ALL', canvas.width / 2, buttonY + buttonHeight / 2)
 
   const texture = new THREE.CanvasTexture(canvas)
-  // ADD THIS LINE:
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.needsUpdate = true
   signTextTextureCache.set(text, texture)
@@ -1201,6 +1295,7 @@ for (let i = 0; i < 8; i++) {
   collectGeoInGroup(sphereGeo, accentMats[i % accentMats.length], [fx, 0.6, fz], 0.08, null, island1)
 }
 
+
 // ─── Island 2: Village Island (left-mid) ────────────────────────────────────
 const island2 = createIsland(-8, -2, 4.5, 1.6, grassDarkMat)
 island2.updateWorldMatrix(true, false)
@@ -1221,6 +1316,10 @@ collectGeoInGroup(cylGeo, lampPostMat, [1.8, 0.7, 1.5], [0.04, 1.4, 0.04], null,
 // Lamp bulb (bouncing — live)
 const lamp = addLiveMesh(sphereGeo, lampBulbMat, [1.8, 1.5, 1.5], 0.12, null, island2)
 markBouncing(lamp, 1.5, 0.05, 0.8, 1)
+
+// Dynamic panel sign on island 2 (Activities section)
+createDynamicPanelSign(island2, 2, 2.2, 1.5, 0, 0.2)
+
 
 // ─── Island 3: Garden Island (right-mid) ────────────────────────────────────
 const island3 = createIsland(9, -1, 3.8, 1.4)
@@ -1528,6 +1627,35 @@ window.addEventListener('resize', () => {
 // ─── Animate ────────────────────────────────────────────────────────────────
 const clock = new THREE.Clock()
 const colliderPos = new THREE.Vector3(0, 5, 0) // reusable collider position
+const raycaster = new THREE.Raycaster()
+const mouse = new THREE.Vector2()
+
+window.addEventListener('mousemove', (event) => {
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
+})
+
+window.addEventListener('click', (event) => {
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
+  raycaster.setFromCamera(mouse, camera)
+
+  if (window.panelSignGroups) {
+    for (const group of window.panelSignGroups) {
+      if (group.userData.textMesh) {
+        const intersects = raycaster.intersectObject(group.userData.textMesh)
+        if (intersects.length > 0) {
+          // Check if click is in button area (lower part of mesh)
+          const uv = intersects[0].uv
+          if (uv && uv.y < 0.25) {
+            document.getElementById('activities-modal').classList.add('open')
+            break
+          }
+        }
+      }
+    }
+  }
+})
 
 async function animate() {
   const dt = Math.min(clock.getDelta(), 0.05)
@@ -1558,6 +1686,25 @@ async function animate() {
     camera.position.set(camPos.x + swayX, camPos.y + swayY, camPos.z)
     camera.lookAt(camTarget.x, camTarget.y, camTarget.z)
   }
+
+  // Check if hovering over button
+  raycaster.setFromCamera(mouse, camera)
+  let isOverButton = false
+  if (window.panelSignGroups) {
+    for (const group of window.panelSignGroups) {
+      if (group.userData.textMesh) {
+        const intersects = raycaster.intersectObject(group.userData.textMesh)
+        if (intersects.length > 0) {
+          const uv = intersects[0].uv
+          if (uv && uv.y < 0.25) {
+            isOverButton = true
+            break
+          }
+        }
+      }
+    }
+  }
+  renderer.domElement.style.cursor = isOverButton ? 'pointer' : 'auto'
 
   // Blur transition
   if (blurTransitionProgress < 1) {
@@ -1687,4 +1834,8 @@ async function animate() {
   renderPipeline.render()
   stats.update()
 }
+
+// Export functions for HTML
+window.getSignTextTexture = getSignTextTexture
+
 renderer.setAnimationLoop(animate)
